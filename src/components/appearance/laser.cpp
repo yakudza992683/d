@@ -1,4 +1,12 @@
-#include <OpenGL/gl.h>
+#ifdef _WIN32
+#  include <GL/gl.h>
+#else
+#  ifdef __APPLE__
+#    include <OpenGL/gl.h>
+#  else
+#    include <GL/gl.h>
+#  endif
+#endif
 #include "laser.h"
 
 void Laser::render(float dt) {

@@ -1,7 +1,11 @@
-#ifdef __APPLE__
-#include <GLUT/glut.h>
+#ifdef _WIN32
+#  include <GL/glut.h>
 #else
-#include <GL/glut.h>
+#  ifdef __APPLE__
+#    include <GLUT/glut.h>
+#  else
+#    include <GL/glut.h>
+#  endif
 #endif
 
 #include "asteroid.h"

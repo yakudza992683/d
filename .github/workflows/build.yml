@@ -30,6 +30,8 @@ jobs:
             dh-make \
             fakeroot \
             wayland-protocols
+          # Для GLFW Wayland support
+          sudo apt-get install -y wayland-scanner
 
       - name: Configure and build
         run: |
