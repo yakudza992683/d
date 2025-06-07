@@ -1,16 +1,33 @@
 #!/bin/bash
 
 # Скрипт автоматизации переноса и сборки проекта azteroids с подготовкой GitHub Actions, публикацией пакетов и инструкцией для пользователя
+# Теперь с клонированием glfw и entityx в lib/ и удалением в них .git
 
-# 1. Клонирование оригинального репозитория и создание нового
 # --- Замените следующие переменные на свои данные! ---
 NEW_REPO_OWNER="yakudza992683" # ваше имя пользователя GitHub
 NEW_REPO_NAME="azteroids"      # имя нового репозитория
 GITHUB_TOKEN="your_github_token_here" # ваш GitHub Token с правами push и создания репозиториев
 
 # 1. Клонирование оригинального проекта
-git clone https://github.com/rodrigosetti/azteroids.git
+git clone --recurse-submodules https://github.com/rodrigosetti/azteroids.git
 cd azteroids
+
+# 1.1 Клонирование зависимостей в lib/ и удаление .git
+mkdir -p lib
+
+echo "Клонируем glfw..."
+git clone https://github.com/glfw/glfw.git lib/glfw
+rm -rf lib/glfw/.git
+
+echo "Клонируем entityx..."
+git clone https://github.com/alecthomas/entityx.git lib/entityx
+rm -rf lib/entityx/.git
+
+# 1.2 Удаляем .git из всех сабмодулей проекта, если они есть
+find . -type d -name '.git' ! -path "./.git" -exec rm -rf {} +
+
+# 1.3 (опционально) Удаляем .gitmodules если не нужен
+rm -f .gitmodules
 
 # 2. Создание нового репозитория на GitHub через API (или вручную, если не хотите скриптовать)
 curl -H "Authorization: token ${GITHUB_TOKEN}" \
@@ -18,9 +35,11 @@ curl -H "Authorization: token ${GITHUB_TOKEN}" \
      https://api.github.com/user/repos
 
 # 3. Перенастройка git и пуш в новый репозиторий
-git remote remove origin
+git init
 git remote add origin "https://github.com/${NEW_REPO_OWNER}/${NEW_REPO_NAME}.git"
-git push -u origin master
+git add .
+git commit -m "Initial commit: migrate azteroids with glfw and entityx in lib/"
+git push -u origin main
 
 # 4. Создание каталога workflow и добавление скрипта CI для Linux/Windows
 mkdir -p .github/workflows
@@ -30,32 +49,32 @@ name: Build azteroids
 
 on:
   push:
-    branches: [ master ]
+    branches: [ main ]
   pull_request:
-    branches: [ master ]
+    branches: [ main ]
 
 jobs:
   build-linux:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        compiler: [clang]
     steps:
       - uses: actions/checkout@v4
       - name: Install dependencies
-        run: sudo apt-get update && sudo apt-get install -y build-essential clang libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev cmake dpkg-dev fakeroot
-      - name: Build
         run: |
-          CC=clang make
+          sudo apt-get update
+          sudo apt-get install -y clang make libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev dpkg-dev fakeroot ruby ruby-dev gcc
+          sudo gem install --no-document fpm
+      - name: Build
+        run: CC=clang make
       - name: Package .deb
         run: |
           mkdir -p azteroids-deb/usr/games
           cp azteroids azteroids-deb/usr/games/
           fpm -s dir -t deb -n azteroids -v 1.0 --prefix=/ -C azteroids-deb .
-      - uses: actions/upload-artifact@v4
+      - name: Upload Linux artifact (.deb)
+        uses: actions/upload-artifact@v4
         with:
           name: azteroids-deb
-          path: "*.deb"
+          path: ./*.deb
 
   build-windows:
     runs-on: windows-latest
@@ -66,25 +85,54 @@ jobs:
         with:
           update: true
           install: >-
-            mingw-w64-x86_64-toolchain
+            mingw-w64-x86_64-gcc
+            mingw-w64-x86_64-make
             mingw-w64-x86_64-SDL2
             mingw-w64-x86_64-SDL2_image
             mingw-w64-x86_64-SDL2_mixer
             mingw-w64-x86_64-SDL2_ttf
-      - name: Build
+      - name: Build with mingw32-make
         shell: msys2 {0}
         run: |
-          make
-      - name: Package MSI (using WiX)
+          mingw32-make
+      - name: Prepare MSI files
         shell: bash
         run: |
-          # предполагается, что WiX и NSIS уже установлены
-          # или используйте другой способ создать MSI/EXE
-          echo "Создание MSI пакета - настройте этот шаг под свои нужды"
-      - uses: actions/upload-artifact@v4
+          mkdir -p msi_root
+          cp azteroids.exe msi_root/
+      - name: Download WiX Toolset
+        run: |
+          choco install wix --no-progress
+      - name: Create MSI installer
+        shell: powershell
+        run: |
+          $wxs = @"
+          <Wix xmlns='http://schemas.microsoft.com/wix/2006/wi'>
+            <Product Id='*' Name='azteroids' Language='1033' Version='1.0.0.0' Manufacturer='azteroids authors' UpgradeCode='B1B9E7A0-8B9B-43A3-A9B6-3B7B9C6B7EFA'>
+              <Package InstallerVersion='200' Compressed='yes' InstallScope='perMachine' />
+              <Directory Id='TARGETDIR' Name='SourceDir'>
+                <Directory Id='ProgramFilesFolder'>
+                  <Directory Id='INSTALLFOLDER' Name='azteroids'>
+                    <Component Id='MainExecutable' Guid='*'>
+                      <File Id='azteroidsExe' Name='azteroids.exe' Source='msi_root/azteroids.exe' />
+                    </Component>
+                  </Directory>
+                </Directory>
+              </Directory>
+              <Feature Id='DefaultFeature' Level='1'>
+                <ComponentRef Id='MainExecutable' />
+              </Feature>
+            </Product>
+          </Wix>
+          "@
+          Set-Content azteroids.wxs $wxs
+          & "C:\Program Files (x86)\WiX Toolset v3.11\bin\candle.exe" azteroids.wxs
+          & "C:\Program Files (x86)\WiX Toolset v3.11\bin\light.exe" azteroids.wixobj -o azteroids.msi
+      - name: Upload Windows artifact (.msi)
+        uses: actions/upload-artifact@v4
         with:
           name: azteroids-msi
-          path: "*.msi"
+          path: azteroids.msi
 EOF
 
 # 5. Добавление и коммит workflow
