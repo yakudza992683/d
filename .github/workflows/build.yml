@@ -1,0 +1,59 @@
+name: Build azteroids
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        compiler: [clang]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: sudo apt-get update && sudo apt-get install -y build-essential clang libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev cmake dpkg-dev fakeroot
+      - name: Build
+        run: |
+          CC=clang make
+      - name: Package .deb
+        run: |
+          mkdir -p azteroids-deb/usr/games
+          cp azteroids azteroids-deb/usr/games/
+          fpm -s dir -t deb -n azteroids -v 1.0 --prefix=/ -C azteroids-deb .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: azteroids-deb
+          path: "*.deb"
+
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install MSYS2 and dependencies
+        uses: msys2/setup-msys2@v2
+        with:
+          update: true
+          install: >-
+            mingw-w64-x86_64-toolchain
+            mingw-w64-x86_64-SDL2
+            mingw-w64-x86_64-SDL2_image
+            mingw-w64-x86_64-SDL2_mixer
+            mingw-w64-x86_64-SDL2_ttf
+      - name: Build
+        shell: msys2 {0}
+        run: |
+          make
+      - name: Package MSI (using WiX)
+        shell: bash
+        run: |
+          # предполагается, что WiX и NSIS уже установлены
+          # или используйте другой способ создать MSI/EXE
+          echo "Создание MSI пакета - настройте этот шаг под свои нужды"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: azteroids-msi
+          path: "*.msi"
