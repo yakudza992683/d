@@ -1,11 +1,14 @@
+
 #ifdef _WIN32
+#  include <windows.h>
+#  include <GL/gl.h>
 #  include <GL/glut.h>
+#elif defined(__APPLE__)
+#  include <OpenGL/gl.h>
+#  include <GLUT/glut.h>
 #else
-#  ifdef __APPLE__
-#    include <GLUT/glut.h>
-#  else
-#    include <GL/glut.h>
-#  endif
+#  include <GL/gl.h>
+#  include <GL/glut.h>
 #endif
 
 #include <components/particle.h>
@@ -13,8 +16,8 @@
 #include "particle.h"
 
 void Spark::render(entityx::Entity entity, float dt) {
-    entityx::ptr<Particle> particle = entity.component<Particle>();
-    GLfloat fade = particle? 1.0f - (particle->age / particle->duration) : 1.0f;
+    auto particle = entity.component<Particle>();
+    GLfloat fade = particle ? 1.0f - (particle->age / particle->duration) : 1.0f;
 
     GLfloat mat_emission[] = { color[0], color[1], color[2], fade };
 
@@ -26,9 +29,9 @@ void Spark::render(entityx::Entity entity, float dt) {
 }
 
 void Cloud::render(entityx::Entity entity, float dt) {
-    entityx::ptr<Particle> particle = entity.component<Particle>();
-    GLfloat fade = particle? 1.0f - (particle->age / particle->duration) : 1.0f;
-    GLfloat size = (particle? particle->age : 1.0f) * grow_speed;
+    auto particle = entity.component<Particle>();
+    GLfloat fade = particle ? 1.0f - (particle->age / particle->duration) : 1.0f;
+    GLfloat size = (particle ? particle->age : 1.0f) * grow_speed;
 
     GLfloat mat_emission[] = { color[0] * fade,
                                color[1] * fade,

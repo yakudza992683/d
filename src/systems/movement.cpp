@@ -6,17 +6,18 @@
 
 #include "movement.h"
 
-void MovementSystem::update(entityx::ptr<entityx::EntityManager> entities,
-                            entityx::ptr<entityx::EventManager> events,
+
+void MovementSystem::update(entityx::EntityManager &entities,
+                            entityx::EventManager &events,
                             double dt) {
-    for (auto entity : entities->entities_with_components<Position, Momentum>()) {
+    for (auto entity : entities.entities_with_components<Position, Momentum>()) {
         if (entity.valid()) {
-            entityx::ptr<Position> position = entity.component<Position>();
-            entityx::ptr<Momentum> momentum = entity.component<Momentum>();
-            entityx::ptr<Mass>     mass     = entity.component<Mass>();
-            entityx::ptr<Geometry> geometry = entity.component<Geometry>();
-            float m = mass? mass->mass : 1;
-            float radius = geometry? geometry->radius : 0;
+            auto position = entity.component<Position>();
+            auto momentum = entity.component<Momentum>();
+            auto mass     = entity.component<Mass>();
+            auto geometry = entity.component<Geometry>();
+            float m = mass ? mass->mass : 1;
+            float radius = geometry ? geometry->radius : 0;
 
             // linear momentum
             position->x  += momentum->x / m * dt;
@@ -65,9 +66,9 @@ void MovementSystem::update(entityx::ptr<entityx::EntityManager> entities,
         }
     }
 
-    for (auto entity : entities->entities_with_components<Attrition, Momentum>()) {
-        entityx::ptr<Attrition> attrition = entity.component<Attrition>();
-        entityx::ptr<Momentum>  momentum  = entity.component<Momentum>();
+    for (auto entity : entities.entities_with_components<Attrition, Momentum>()) {
+        auto attrition = entity.component<Attrition>();
+        auto momentum  = entity.component<Momentum>();
 
         momentum->x *= pow(attrition->linear, dt);
         momentum->y *= pow(attrition->linear, dt);

@@ -7,7 +7,7 @@
 // foward declaration of App
 class App;
 
-class Level : public entityx::Manager {
+class Level {
     public:
         Level(App *application);
 

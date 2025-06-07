@@ -31,7 +31,7 @@ jobs:
             fakeroot \
             wayland-protocols
           # Для GLFW Wayland support
-          sudo apt-get install -y wayland-scanner
+          # sudo apt-get install -y wayland-scanner  # больше не требуется
 
       - name: Configure and build
         run: |

@@ -17,12 +17,12 @@ const float PI = 3.14159265359f;
 const float DPI = 2 * PI;
 const float HPI = 0.5f * PI;
 
-void UserShip::initialize(entityx::ptr<entityx::EntityManager> entities,
-                          entityx::ptr<entityx::EventManager> events) {
-    entity_manager = entities;
+void UserShip::initialize(entityx::EntityManager &entities,
+                          entityx::EventManager &events) {
+    entity_manager = &entities;
 
     // create entity's components
-    entity = entities->create();
+    entity = entities.create();
     entity.assign<Identity>(EntityIdentity::SHIP);
     entity.assign<Mass>(30);
     entity.assign<Ship>();
@@ -56,8 +56,8 @@ void UserShip::fire(double dt) {
     if (cool_down > FIRE_COOLDOWN) {
         cool_down = 0; // reset cool down
 
-        entityx::ptr<Position> position = entity.component<Position>();
-        entityx::ptr<Momentum> momentum = entity.component<Momentum>();
+        auto position = entity.component<Position>();
+        auto momentum = entity.component<Momentum>();
 
         // laser beam!
         float angle = (position->rotation * DPI / 360.f) + HPI;
@@ -77,15 +77,14 @@ void UserShip::fire(double dt) {
 }
 
 void UserShip::change_angular_momemtum(float delta) {
-    entityx::ptr<Momentum> momentum = entity.component<Momentum>();
-
+    auto momentum = entity.component<Momentum>();
     momentum->angular += delta;
 }
 
 void UserShip::change_linear_momentum(float delta) {
-    entityx::ptr<Position> position = entity.component<Position>();
-    entityx::ptr<Momentum> momentum = entity.component<Momentum>();
-    entityx::ptr<Ship>     ship     = entity.component<Ship>();
+    auto position = entity.component<Position>();
+    auto momentum = entity.component<Momentum>();
+    auto ship     = entity.component<Ship>();
 
     float angle = (position->rotation * DPI / 360.f) + HPI;
     momentum->x += cos(angle) * delta;

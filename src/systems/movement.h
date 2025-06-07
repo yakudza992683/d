@@ -3,14 +3,14 @@
 #include <entityx/entityx.h>
 
 class MovementSystem : public entityx::System<MovementSystem> {
-    public:
-        MovementSystem(int width, int height) : width(width), height(height) {}
+public:
+    MovementSystem(int width, int height) : width(width), height(height) {}
 
-        void update(entityx::ptr<entityx::EntityManager> entities,
-                    entityx::ptr<entityx::EventManager> events,
-                    double dt) override;
+    void update(entityx::EntityManager &entities,
+                entityx::EventManager &events,
+                double dt) override;
 
-    private:
-        int width, height;
+private:
+    int width, height;
 };
 

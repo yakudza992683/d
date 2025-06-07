@@ -17,8 +17,8 @@ struct Position : entityx::Component<Position> {
             rotation_axis_z(rotation_axis_z),
             offLimitBehavior(offLimitBehavior) {}
 
-    float distance(entityx::ptr<Position> other) {
-        return sqrt(pow(other->x - x, 2) + pow(other->y - y, 2));
+    float distance(entityx::ComponentHandle<Position> other) {
+        return other ? sqrt(pow(other->x - x, 2) + pow(other->y - y, 2)) : 0.0f;
     }
 
     float x, y,

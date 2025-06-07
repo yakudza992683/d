@@ -12,12 +12,12 @@
 
 #include "particle.h"
 
-void ParticleSystem::update(entityx::ptr<entityx::EntityManager> entities,
-                          entityx::ptr<entityx::EventManager> events,
+void ParticleSystem::update(entityx::EntityManager &entities,
+                          entityx::EventManager &events,
                           double dt) {
-    for (auto entity : entities->entities_with_components<Particle>()) {
+    for (auto entity : entities.entities_with_components<Particle>()) {
         if (entity.valid()) {
-            entityx::ptr<Particle> particle = entity.component<Particle>();
+            auto particle = entity.component<Particle>();
 
             particle->age += dt;
             if (particle->age > particle->duration) {
@@ -25,5 +25,5 @@ void ParticleSystem::update(entityx::ptr<entityx::EntityManager> entities,
             }
         }
     }
-};
+}
 

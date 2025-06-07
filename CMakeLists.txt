@@ -12,16 +12,30 @@ add_subdirectory(lib/entityx EXCLUDE_FROM_ALL)
 add_subdirectory(lib/glfw EXCLUDE_FROM_ALL)
 
 
-# Не ищем GLUT, он не нужен для вашей игры и вызывает ошибки на Windows
+
+
+# Поиск и линковка OpenGL и GLUT/freeglut для всех платформ
+if (WIN32)
+    find_package(OpenGL REQUIRED)
+    include_directories(${OPENGL_INCLUDE_DIR})
+    find_path(GLUT_INCLUDE_DIR NAMES GL/glut.h)
+    find_library(GLUT_LIBRARY NAMES freeglut glut)
+    if (NOT GLUT_INCLUDE_DIR OR NOT GLUT_LIBRARY)
+        message(FATAL_ERROR "GLUT/freeglut не найден. Установите freeglut (например, через vcpkg: vcpkg install freeglut) или вручную.")
+    endif()
+    include_directories(${GLUT_INCLUDE_DIR})
+elseif(APPLE)
+    # На macOS GLUT и OpenGL идут с системой
+else()
+    find_package(OpenGL REQUIRED)
+    include_directories(${OPENGL_INCLUDE_DIR})
+    find_package(GLUT REQUIRED)
+    include_directories(${GLUT_INCLUDE_DIRS})
+endif()
+
 
 # include paths
 include_directories(lib/glfw/include lib/entityx src)
-
-if (NOT APPLE)
-    # HACK: This is NOTFOUND on OS X 10.8
-    find_package(OpenGL REQUIRED)
-    include_directories(${OPENGL_INCLUDE_DIR})
-endif()
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "bin/")
 file(GLOB_RECURSE azteroids_SOURCES "src/*.cpp")
@@ -33,6 +47,7 @@ if (APPLE)
     # include the icns files in the target
     set( azteroids_SOURCES ${azteroids_SOURCES} ${OSX_ICON_FILES} )
 endif()
+
 
 add_executable(Azteroids WIN32 MACOSX_BUNDLE ${azteroids_SOURCES})
 
@@ -53,5 +68,12 @@ endif()
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
-target_link_libraries(Azteroids entityx glfw)
+
+if (WIN32)
+    target_link_libraries(Azteroids entityx glfw ${OPENGL_gl_LIBRARY} ${GLUT_LIBRARY})
+elseif(APPLE)
+    target_link_libraries(Azteroids entityx glfw "-framework OpenGL" "-framework GLUT")
+else()
+    target_link_libraries(Azteroids entityx glfw ${OPENGL_gl_LIBRARY} ${GLUT_LIBRARIES})
+endif()
 

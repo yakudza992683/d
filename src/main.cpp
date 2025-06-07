@@ -1,13 +1,16 @@
+
 #include <GLFW/glfw3.h>
 
 #ifdef _WIN32
+#  include <windows.h>
+#  include <GL/gl.h>
 #  include <GL/glut.h>
+#elif defined(__APPLE__)
+#  include <OpenGL/gl.h>
+#  include <GLUT/glut.h>
 #else
-#  ifdef __APPLE__
-#    include <GLUT/glut.h>
-#  else
-#    include <GL/glut.h>
-#  endif
+#  include <GL/gl.h>
+#  include <GL/glut.h>
 #endif
 
 #include <stdlib.h>

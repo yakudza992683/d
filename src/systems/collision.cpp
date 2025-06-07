@@ -11,40 +11,40 @@
 
 const float MINIMUM_MASS = 10;
 
-void handle_cases(entityx::ptr<entityx::EntityManager> entity_manager,
+void handle_cases(entityx::EntityManager *entity_manager,
                   entityx::Entity entity1, entityx::Entity entity2);
 void bounce(entityx::Entity entity1, entityx::Entity entity2);
 
-void CollisionSystem::update(entityx::ptr<entityx::EntityManager> entities,
-                             entityx::ptr<entityx::EventManager> events,
+void CollisionSystem::update(entityx::EntityManager &entities,
+                             entityx::EventManager &events,
                              double dt) {
-    for (auto entity1 : entities->entities_with_components<Position, Geometry>()) {
-        entityx::ptr<Position> pos1 = entity1.component<Position>();
-        entityx::ptr<Geometry> geo1 = entity1.component<Geometry>();
+    for (auto entity1 : entities.entities_with_components<Position, Geometry>()) {
+        auto pos1 = entity1.component<Position>();
+        auto geo1 = entity1.component<Geometry>();
 
-        for (auto entity2 : entities->entities_with_components<Position, Geometry>()) {
+        for (auto entity2 : entities.entities_with_components<Position, Geometry>()) {
             if (entity1.valid() && entity2.valid() && entity1 != entity2) {
-                entityx::ptr<Position> pos2 = entity2.component<Position>();
-                entityx::ptr<Geometry> geo2 = entity2.component<Geometry>();
+                auto pos2 = entity2.component<Position>();
+                auto geo2 = entity2.component<Geometry>();
 
                 double distance = pos1->distance(pos2);
                 double min_distance = geo1->radius + geo2->radius;
 
                 if (distance < min_distance) {
                     // Collision!
-                    handle_cases(entities, entity1, entity2);
+                    handle_cases(&entities, entity1, entity2);
                 }
             }
         }
     }
 }
 
-void handle_cases(entityx::ptr<entityx::EntityManager> entity_manager,
+void handle_cases(entityx::EntityManager *entity_manager,
                   entityx::Entity entity1, entityx::Entity entity2) {
     const float spark_color[] = {0.5f, 1.0f, 1.0f};
 
-    entityx::ptr<Identity> id1 = entity1.component<Identity>();
-    entityx::ptr<Identity> id2 = entity2.component<Identity>();
+    auto id1 = entity1.component<Identity>();
+    auto id2 = entity2.component<Identity>();
 
     // handle cases...
     if (id1->identity == EntityIdentity::ASTEROID &&
@@ -53,8 +53,8 @@ void handle_cases(entityx::ptr<entityx::EntityManager> entity_manager,
 
     } else if (id1->identity == EntityIdentity::LASER &&
                id2->identity == EntityIdentity::ASTEROID) {
-        entityx::ptr<Mass>     mass     = entity2.component<Mass>();
-        entityx::ptr<Position> position = entity2.component<Position>();
+        auto mass     = entity2.component<Mass>();
+        auto position = entity2.component<Position>();
 
         entity1.destroy();
         entity2.destroy();
@@ -91,11 +91,11 @@ void handle_cases(entityx::ptr<entityx::EntityManager> entity_manager,
                                    0, 0, 0, 1, 
                                    OffLimitBehavior::DESTROY);
         }
-        entityx::Entity cloud = entity_manager->create();
-        cloud.assign<Cloud>(spark_color, 500);
-        cloud.assign<Particle>(0.2f);
-        cloud.assign<Identity>(EntityIdentity::PARTICLE);
-        cloud.assign<Position>(position->x, position->y);
+    entityx::Entity cloud = entity_manager->create();
+    cloud.assign<Cloud>(spark_color, 500);
+    cloud.assign<Particle>(0.2f);
+    cloud.assign<Identity>(EntityIdentity::PARTICLE);
+    cloud.assign<Position>(position->x, position->y);
 
     } else if (id2->identity == EntityIdentity::LASER &&
                id1->identity == EntityIdentity::ASTEROID) {
@@ -105,12 +105,12 @@ void handle_cases(entityx::ptr<entityx::EntityManager> entity_manager,
 }
 
 void bounce(entityx::Entity entity1, entityx::Entity entity2) {
-    entityx::ptr<Position> pos1 = entity1.component<Position>();
-    entityx::ptr<Geometry> geo1 = entity1.component<Geometry>();
-    entityx::ptr<Momentum> mom1 = entity1.component<Momentum>();
+    auto pos1 = entity1.component<Position>();
+    auto geo1 = entity1.component<Geometry>();
+    auto mom1 = entity1.component<Momentum>();
 
-    entityx::ptr<Position> pos2 = entity2.component<Position>();
-    entityx::ptr<Geometry> geo2 = entity2.component<Geometry>();
+    auto pos2 = entity2.component<Position>();
+    auto geo2 = entity2.component<Geometry>();
 
     double distance = pos1->distance(pos2);
     double min_distance = geo1->radius + geo2->radius;
@@ -127,7 +127,7 @@ void bounce(entityx::Entity entity1, entityx::Entity entity2) {
         pos2->x += dx * adjust;
         pos2->y += dy * adjust;
 
-        entityx::ptr<Momentum> mom2 = entity2.component<Momentum>();
+        auto mom2 = entity2.component<Momentum>();
 
         if (mom1 && mom2) {
             // Exchange momentum

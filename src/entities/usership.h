@@ -7,8 +7,8 @@ class UserShip {
     public:
         UserShip(float x, float y) : x(x), y(y) {}
 
-        void initialize(entityx::ptr<entityx::EntityManager> entities,
-                        entityx::ptr<entityx::EventManager> events);
+        void initialize(entityx::EntityManager &entities,
+                        entityx::EventManager &events);
 
         void update(double dt);
 
@@ -23,7 +23,7 @@ class UserShip {
         double cool_down = 0;
 
         entityx::Entity entity;
-        entityx::ptr<entityx::EntityManager> entity_manager;
+        entityx::EntityManager *entity_manager;
 
         void change_linear_momentum(float delta);
         void change_angular_momemtum(float delta);
