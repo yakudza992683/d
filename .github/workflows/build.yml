@@ -2,32 +2,32 @@ name: Build azteroids
 
 on:
   push:
-    branches: [ main ]
+    branches: [ master ]
   pull_request:
-    branches: [ main ]
+    branches: [ master ]
 
 jobs:
   build-linux:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        compiler: [clang]
     steps:
       - uses: actions/checkout@v4
       - name: Install dependencies
-        run: sudo apt-get update && sudo apt-get install -y build-essential clang libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev cmake dpkg-dev fakeroot
-      - name: Build
         run: |
-          CC=clang make
+          sudo apt-get update
+          sudo apt-get install -y clang make libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev dpkg-dev fakeroot ruby ruby-dev gcc
+          sudo gem install --no-document fpm
+      - name: Build
+        run: CC=clang make
       - name: Package .deb
         run: |
           mkdir -p azteroids-deb/usr/games
           cp azteroids azteroids-deb/usr/games/
           fpm -s dir -t deb -n azteroids -v 1.0 --prefix=/ -C azteroids-deb .
-      - uses: actions/upload-artifact@v4
+      - name: Upload Linux artifact (.deb)
+        uses: actions/upload-artifact@v4
         with:
           name: azteroids-deb
-          path: "*.deb"
+          path: ./*.deb
 
   build-windows:
     runs-on: windows-latest
@@ -38,22 +38,51 @@ jobs:
         with:
           update: true
           install: >-
-            mingw-w64-x86_64-toolchain
+            mingw-w64-x86_64-gcc
+            mingw-w64-x86_64-make
             mingw-w64-x86_64-SDL2
             mingw-w64-x86_64-SDL2_image
             mingw-w64-x86_64-SDL2_mixer
             mingw-w64-x86_64-SDL2_ttf
-      - name: Build
+      - name: Build with make
         shell: msys2 {0}
         run: |
           make
-      - name: Package MSI (using WiX)
+      - name: Prepare MSI files
         shell: bash
         run: |
-          # предполагается, что WiX и NSIS уже установлены
-          # или используйте другой способ создать MSI/EXE
-          echo "Создание MSI пакета - настройте этот шаг под свои нужды"
-      - uses: actions/upload-artifact@v4
+          mkdir -p msi_root
+          cp azteroids.exe msi_root/
+      - name: Download WiX Toolset
+        run: |
+          choco install wix --no-progress
+      - name: Create MSI installer
+        shell: powershell
+        run: |
+          $wxs = @"
+          <Wix xmlns='http://schemas.microsoft.com/wix/2006/wi'>
+            <Product Id='*' Name='azteroids' Language='1033' Version='1.0.0.0' Manufacturer='azteroids authors' UpgradeCode='B1B9E7A0-8B9B-43A3-A9B6-3B7B9C6B7EFA'>
+              <Package InstallerVersion='200' Compressed='yes' InstallScope='perMachine' />
+              <Directory Id='TARGETDIR' Name='SourceDir'>
+                <Directory Id='ProgramFilesFolder'>
+                  <Directory Id='INSTALLFOLDER' Name='azteroids'>
+                    <Component Id='MainExecutable' Guid='*'>
+                      <File Id='azteroidsExe' Name='azteroids.exe' Source='msi_root/azteroids.exe' />
+                    </Component>
+                  </Directory>
+                </Directory>
+              </Directory>
+              <Feature Id='DefaultFeature' Level='1'>
+                <ComponentRef Id='MainExecutable' />
+              </Feature>
+            </Product>
+          </Wix>
+          "@
+          Set-Content azteroids.wxs $wxs
+          & "C:\Program Files (x86)\WiX Toolset v3.11\bin\candle.exe" azteroids.wxs
+          & "C:\Program Files (x86)\WiX Toolset v3.11\bin\light.exe" azteroids.wixobj -o azteroids.msi
+      - name: Upload Windows artifact (.msi)
+        uses: actions/upload-artifact@v4
         with:
           name: azteroids-msi
-          path: "*.msi"
+          path: azteroids.msi
