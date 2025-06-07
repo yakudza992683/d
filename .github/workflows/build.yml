@@ -97,12 +97,22 @@ jobs:
         Write-Output "CMAKE_PREFIX_PATH=$sfmlPath" | Out-File -FilePath $env:GITHUB_ENV -Append
         Write-Output "PATH=$env:PATH;$sfmlPath\bin" | Out-File -FilePath $env:GITHUB_ENV -Append
 
+    - name: Install vcpkg and freeglut
+      shell: pwsh
+      run: |
+        $vcpkgRoot = "$env:RUNNER_TEMP\vcpkg"
+        git clone https://github.com/microsoft/vcpkg.git $vcpkgRoot
+        & $vcpkgRoot\bootstrap-vcpkg.bat
+        & $vcpkgRoot\vcpkg.exe install freeglut:x64-windows
+        echo "VCPKG_ROOT=$vcpkgRoot" | Out-File -FilePath $env:GITHUB_ENV -Append
+        echo "CMAKE_TOOLCHAIN_FILE=$vcpkgRoot\scripts\buildsystems\vcpkg.cmake" | Out-File -FilePath $env:GITHUB_ENV -Append
+
     - name: Build with CMake
       shell: pwsh
       run: |
         mkdir build
         cd build
-        cmake -G "Visual Studio 17 2022" -A x64 ..
+        cmake -G "Visual Studio 17 2022" -A x64 -DCMAKE_TOOLCHAIN_FILE="$env:CMAKE_TOOLCHAIN_FILE" ..
         cmake --build . --config Release --target azteroids
 
     - name: Create MSI package
