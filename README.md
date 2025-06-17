@@ -1,32 +1,19 @@
-# Azteroids
+# ZombieV
+2D top down zombie shooter game in C++ using SFML as graphics library and custom game engine (Ligths, Physics, Entity creation, etc...)
 
-Simple asteroids game made in C++ and OpenGL.
+## Example
+![Zombie](https://github.com/johnBuffer/ZombieV/blob/master/img/illustration.png)
 
-![Screen Shot](img/screenshot-1.png?raw=true)
+### Video link
 
-## Dependencies
+ - [Single player](https://www.youtube.com/watch?v=pj3m3Fu3i5A)
+ - [Bots](https://www.youtube.com/watch?v=LflP2BUqJQc)
+ - [Lights](https://www.youtube.com/watch?v=rCyaakRHUJ0)
 
- * OpenGL and GLUT.
- * Cmake.
- * C++ compiler with C++11 support.
- * Other dependencies are git submodules (entityx and glfw).
+## Run demo
 
-## Build
-
-Clone this repository and update the git submodules (`git submodule update`).
-
-Just run `cmake` to build the Makefile, and then `make`. The executable will be
-placed inside `bin` folder.
-
-## Commands
-
- * Arrow keys - move the ship.
- * Space - shoot.
-
-## Acknowledgments
-
- * Alec Thomas' [entityx](https://github.com/alecthomas/entityx) -
-   Entity-Component system.
- * [CMake](http://cmake.org) - cross-platform open-source build system.
- * [GLFW](http://www.glfw.org) - library for creating windows with OpenGL.
-
+In the release folder you will find binaries, each one corresponding to a scenario
+*  Solo game
+*  Game with bots
+*  Lights demo
+*  Bots + night

@@ -1,91 +1,113 @@
-#include <GLFW/glfw3.h>
+#include <iostream>
+#include <SFML/Graphics.hpp>
 
-#ifdef __APPLE__
-#include <GLUT/glut.h>
-#else
-#include <GL/glut.h>
-#endif
+#include "System/GameWorld.hpp"
+#include "System/GameRender.hpp"
 
-#include <stdlib.h>
-#include <stdio.h>
+#include "Bot.hpp"
+#include "Props/Props.hpp"
+#include "Turret.hpp"
+#include "Hunter.hpp"
+#include "Zombie.hpp"
 
-#include <app.h>
+#define WIN_WIDTH 1600
+#define WIN_HEIGHT 900
 
-const int WINDOW_WIDTH = 800;
-const int WINDOW_HEIGHT = 600;
+#include "System/Utils.hpp"
 
-const int SPACE_WIDTH = 800;
-const int SPACE_HEIGHT = 600;
+int main()
+{
+    sf::ContextSettings settings;
+    settings.antialiasingLevel = 0;
+    sf::RenderWindow window(sf::VideoMode(WIN_WIDTH, WIN_HEIGHT), "Zombie V", sf::Style::Default, settings);
+    //window.setVerticalSyncEnabled(true);
+    window.setFramerateLimit(60);
 
-App application(SPACE_WIDTH, SPACE_HEIGHT);
+    GameRender::initialize(WIN_WIDTH, WIN_HEIGHT);
+    GameWorld world;
+    world.initEventHandler(window);
 
-static void error_callback (int error, const char* description) {
-    fputs(description, stderr);
-}
+    Hunter::registerObject(&world);
 
-static void key_callback (GLFWwindow* window, int key, int scancode, int action, int mods) {
-    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
-        glfwSetWindowShouldClose(window, GL_TRUE);
-        return;
+	world.initializeWeapons();
+
+    world.getPhyManager().setGravity(Vec2(0, 0));
+
+    Hunter& h = *Hunter::newEntity(static_cast<float>(MAP_SIZE/2), static_cast<float>(MAP_SIZE/2));
+    world.addEntity(&h);
+
+    int waveCount = 0;
+
+    for (int i(2); i--;)
+    {
+        world.addEntity(Bot::newEntity(static_cast<float>(MAP_SIZE / 2 + rand() % 10), static_cast<float>(MAP_SIZE / 2 + rand() % 10)));
     }
 
-    // set keys
-    if (action == GLFW_PRESS || action == GLFW_RELEASE) {
-        bool key_pressed = action == GLFW_PRESS;
-        switch (key) {
-            case GLFW_KEY_UP:
-                application.keys_pressed.up    = key_pressed;
-                break;
-            case GLFW_KEY_DOWN:
-                application.keys_pressed.down   = key_pressed;
-                break;
-            case GLFW_KEY_LEFT:
-                application.keys_pressed.left  = key_pressed;
-                break;
-            case GLFW_KEY_RIGHT:
-                application.keys_pressed.right = key_pressed;
-                break;
-            case GLFW_KEY_SPACE:
-                application.keys_pressed.space = key_pressed;
-                break;
+    sf::Mouse::setPosition(sf::Vector2i(WIN_WIDTH/2+100, WIN_HEIGHT/2));
+
+    Zombie* newZombie;
+    for (int i(100); i--;)
+    {
+        newZombie = Zombie::newEntity(getRandUnder(static_cast<float>(MAP_SIZE)), getRandUnder(static_cast<float>(MAP_SIZE)));
+		EntityID target = h.getID();
+		newZombie->setTarget(target);
+        world.addEntity(newZombie);
+    }
+
+    for (int i(0); i<10; ++i)
+    {
+        Light light;
+        light.position = Vec2(getRandUnder(2000.0f), getRandUnder(2000.0f));
+        light.color    = sf::Color(rand()%255, rand()%255,rand()%255);
+        light.radius   = getRandFloat(300.0f, 450.0f);
+        GameRender::getLightEngine().addDurableLight(light);
+    }
+
+    int frameCount = 0;
+    float ttime = 0;
+    while (window.isOpen())
+    {
+        ++frameCount;
+
+        if (Zombie::getObjectsCount() == 0)
+        {
+            ++waveCount;
+            for (int i(waveCount*waveCount + 10); i--;)
+            {
+                Zombie* newZombie(Zombie::newEntity(getRandUnder(static_cast<float>(MAP_SIZE)), getRandUnder(static_cast<float>(MAP_SIZE))));
+                //newZombie->setTarget(&(*Hunter::getObjects().front()));
+                world.addEntity(newZombie);
+            }
         }
+
+        sf::Event event;
+        while (window.pollEvent(event))
+        {
+			switch (event.type)
+			{
+				case sf::Event::KeyPressed:
+					if (event.key.code == sf::Keyboard::Escape) window.close();
+				default:
+                    break;
+			}
+        }
+
+        sf::Clock clock;
+        world.update();
+
+		int upTime = clock.getElapsedTime().asMilliseconds();
+        ttime += upTime;
+
+        Vec2 p = h.getCoord();
+		GameRender::setFocus({ p.x, p.y });
+
+        GameRender::clear();
+
+        world.render();
+        GameRender::display(&window);
+
+        window.display();
     }
+
+    return 0;
 }
-
-int main (void) {
-    GLFWwindow* window;
-    float lastTime = 0;
-
-    glfwSetErrorCallback(error_callback);
-    if (!glfwInit()) {
-        exit(EXIT_FAILURE);
-    }
-    window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Azteroids", NULL, NULL);
-    if (!window) {
-        glfwTerminate();
-        exit(EXIT_FAILURE);
-    }
-    glfwMakeContextCurrent(window);
-    glfwSetKeyCallback(window, key_callback);
-
-    application.initialize();
-
-    while (!glfwWindowShouldClose(window)) {
-        int width, height;
-        glfwGetFramebufferSize(window, &width, &height);
-        glViewport(0, 0, width, height);
-
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-        double time = glfwGetTime();
-        application.step(time - lastTime);
-        lastTime = time;
-
-        glfwSwapBuffers(window);
-        glfwPollEvents();
-    }
-    glfwDestroyWindow(window);
-    glfwTerminate();
-    exit(EXIT_SUCCESS);
-}
-
