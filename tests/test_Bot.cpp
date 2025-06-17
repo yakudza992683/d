@@ -4,8 +4,13 @@
 // Минимальный мок для WorldEntity и GameWorld
 class DummyEntity : public WorldEntity {
 public:
+    DummyEntity() : WorldEntity() {}
     int getType() const override { return 1; }
     bool isDying() const override { return false; }
+    bool isDone() const override { return false; }
+    void initPhysics(GameWorld*) override {}
+    void update(GameWorld&) override {}
+    void render() override {}
 };
 class DummyGameWorld : public GameWorld {};
 
@@ -30,8 +35,13 @@ TEST(BotTest, InitializeStatic) {
 // Проверка hit с типом ZOMBIE
 class ZombieEntity : public WorldEntity {
 public:
+    ZombieEntity() : WorldEntity() {}
     int getType() const override { return EntityTypes::ZOMBIE; }
     bool isDying() const override { return false; }
+    bool isDone() const override { return false; }
+    void initPhysics(GameWorld*) override {}
+    void update(GameWorld&) override {}
+    void render() override {}
 };
 
 TEST(BotTest, HitZombieSetsTarget) {
