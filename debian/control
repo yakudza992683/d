@@ -1,0 +1,11 @@
+Source: ZombieV
+Section: games
+Priority: optional
+Maintainer: Your Name <your@email.com>
+Build-Depends: cmake, g++, libsfml-dev, libopenal-dev
+Standards-Version: 4.5.0
+Package: zombiev
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: ZombieV Game
+ A simple zombie game built with SFML.

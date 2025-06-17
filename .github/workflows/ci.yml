@@ -1,0 +1,44 @@
+name: Build, Test & Package
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  build-test-package:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake g++ libsfml-dev libopenal-dev libgtest-dev ninja-build dpkg-dev
+          sudo apt-get install -y python3-pip
+          pip3 install conan
+
+      - name: Configure CMake
+        run: cmake -S . -B build -G Ninja
+
+      - name: Build
+        run: cmake --build build
+
+      - name: Run tests
+        run: ctest --test-dir build --output-on-failure
+
+      - name: Create DEB package
+        run: |
+          mkdir -p build/debian/usr/games
+          cp build/ZombieV build/debian/usr/games/
+          fpm -s dir -t deb -n zombiev -v 1.0.0 -C build/debian .
+        env:
+          FPM_VERSION: latest
+
+      - name: Upload DEB artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: zombiev-deb
+          path: "*.deb"

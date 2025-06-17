@@ -36,3 +36,11 @@ if(MSVC)
       file(COPY ${lib_path} DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
    endforeach()
 endif(MSVC)
+
+# GoogleTest как submodule
+add_subdirectory(external/googletest)
+
+add_executable(BotTest tests/test_Bot.cpp)
+target_include_directories(BotTest PRIVATE include)
+target_link_libraries(BotTest gtest_main sfml-system sfml-window sfml-graphics sfml-audio)
+add_test(NAME BotTest COMMAND BotTest)
