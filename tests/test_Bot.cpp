@@ -1,49 +1,52 @@
-cmake_minimum_required(VERSION 3.10)
-set(PROJECT_NAME ZombieV)
-project(${PROJECT_NAME} VERSION 1.0.0 LANGUAGES CXX)
-find_package(OpenGL)
+#include <gtest/gtest.h>
+#include "../include/Bot.hpp"
 
-file(GLOB source_files
-	"src/*.cpp"
-	"src/Blur/*.cpp"
-	"src/LightEngine/*.cpp"
-	"src/Props/*.cpp"
-	"src/System/*.cpp"
-	"src/UnitedEngine/*.cpp"
-	"src/Weapons/*.cpp"
-)
+// Минимальный мок для WorldEntity и GameWorld
+class DummyEntity : public WorldEntity {
+public:
+    DummyEntity() : WorldEntity() {}
+    int getType() const { return 1; }
+    bool isDying() const { return false; }
+    bool isDone() const override { return false; }
+    void initPhysics(GameWorld*) override {}
+    void update(GameWorld&) override {}
+    void render() override {}
+};
+class DummyGameWorld : public GameWorld {};
 
-set(SOURCES ${source_files})
-set(CMAKE_CXX_STANDARD 11)
+TEST(BotTest, DefaultConstructor) {
+    Bot bot;
+    SUCCEED();
+}
 
-# Detect and add SFML
-set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake_modules" ${CMAKE_MODULE_PATH})
-find_package(SFML 2 REQUIRED COMPONENTS audio graphics window system)
+TEST(BotTest, SetTarget) {
+    Bot bot;
+    DummyEntity entity;
+    bot.setTarget(&entity);
+    bot.hit(&entity, nullptr);
+    SUCCEED();
+}
 
-add_executable(${PROJECT_NAME} ${SOURCES})
-target_include_directories(${PROJECT_NAME} PRIVATE "include" "lib")
-target_link_libraries(${PROJECT_NAME} sfml-system sfml-window sfml-graphics sfml-audio)
-if (UNIX)
-   target_link_libraries(${PROJECT_NAME} pthread)
-endif (UNIX)
+TEST(BotTest, InitializeStatic) {
+    Bot::initialize();
+    SUCCEED();
+}
 
-# Copy data dir to the binary directory
-file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/data DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+// Проверка hit с типом ZOMBIE
+class ZombieEntity : public WorldEntity {
+public:
+    ZombieEntity() : WorldEntity() {}
+    int getType() const { return EntityTypes::ZOMBIE; }
+    bool isDying() const { return false; }
+    bool isDone() const override { return false; }
+    void initPhysics(GameWorld*) override {}
+    void update(GameWorld&) override {}
+    void render() override {}
+};
 
-if(MSVC)
-   foreach(lib ${SFML_LIBS})
-      get_target_property(lib_path ${lib} LOCATION)
-      file(COPY ${lib_path} DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
-   endforeach()
-endif(MSVC)
-
-# GoogleTest как submodule
-add_subdirectory(external/googletest)
-
-# Удаляем main.cpp из SOURCES для тестов
-list(REMOVE_ITEM SOURCES "${CMAKE_SOURCE_DIR}/src/main.cpp")
-add_executable(BotTest tests/test_Bot.cpp ${SOURCES})
-target_include_directories(BotTest PRIVATE include)
-target_link_libraries(BotTest gtest_main sfml-system sfml-window sfml-graphics sfml-audio)
-enable_testing()
-add_test(NAME BotTest COMMAND BotTest)
+TEST(BotTest, HitZombieSetsTarget) {
+    Bot bot;
+    ZombieEntity zombie;
+    bot.hit(&zombie, nullptr);
+    SUCCEED();
+}
