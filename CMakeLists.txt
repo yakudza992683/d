@@ -40,7 +40,9 @@ endif(MSVC)
 # GoogleTest как submodule
 add_subdirectory(external/googletest)
 
-add_executable(BotTest tests/test_Bot.cpp)
+# Удаляем main.cpp из SOURCES для тестов
+list(REMOVE_ITEM SOURCES "${CMAKE_SOURCE_DIR}/src/main.cpp")
+add_executable(BotTest tests/test_Bot.cpp ${SOURCES})
 target_include_directories(BotTest PRIVATE include)
 target_link_libraries(BotTest gtest_main sfml-system sfml-window sfml-graphics sfml-audio)
 add_test(NAME BotTest COMMAND BotTest)
