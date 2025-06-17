@@ -5,6 +5,8 @@
 class DummyEntity : public WorldEntity {
 public:
     DummyEntity() : WorldEntity() {}
+    int getType() const override { return 1; }
+    bool isDying() const override { return false; }
     bool isDone() const override { return false; }
     void initPhysics(GameWorld*) override {}
     void update(GameWorld&) override {}
@@ -34,6 +36,8 @@ TEST(BotTest, InitializeStatic) {
 class ZombieEntity : public WorldEntity {
 public:
     ZombieEntity() : WorldEntity() {}
+    int getType() const override { return EntityTypes::ZOMBIE; }
+    bool isDying() const override { return false; }
     bool isDone() const override { return false; }
     void initPhysics(GameWorld*) override {}
     void update(GameWorld&) override {}

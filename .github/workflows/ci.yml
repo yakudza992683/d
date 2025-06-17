@@ -32,6 +32,9 @@ jobs:
       - name: Run tests
         run: ctest --test-dir build --output-on-failure
 
+      - name: Install FPM
+        run: sudo gem install --no-document fpm
+
       - name: Create DEB package
         run: |
           mkdir -p build/debian/usr/games
